@@ -1,0 +1,156 @@
+<head>
+    <style>
+        iframe {
+            flex-grow: 1;
+        }
+        
+        .flex {
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .col {
+            flex-direction: column;
+        }
+
+        .row {
+            flex-direction: row;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <form id="bestForm" method="GET">
+        <textarea style="width: 376px; height: 162px;" name="urls" id="urls" placeholder="YouTube URLs or Video IDs" wrap="off" required></textarea>
+
+        <label for="cols">Columns: </label>
+        <input type="number" id="cols" name="columns" required>
+
+        <label for="rows">Rows: </label>
+        <input type="number" id="rows" name="rows" required>
+
+        <input type="submit">
+    </form>
+    
+    <script>
+        function parseHexString(string) {
+            /*
+                Converts hex in a string to characters.
+                Mainly used for hex in a url.
+
+                Example:
+                    "http%3A%2F%2Fgoogle.com" -> "http://google.com"
+            */
+            let str = "";
+            let code = "";
+            let c = "";
+
+            for (let i = 0; i < string.length; i++) {
+                c = string[i];
+
+                if (c === "%") {
+                    code = parseInt(string[i + 1] + string[i + 2], 16);
+                    str += String.fromCharCode(code);
+                    i += 2
+
+                } else {
+                    str += c;
+                }
+            }
+            
+            return str;
+        }
+
+        function parseURL(url) {
+            /*
+                Grabs arguments from the URL
+            */
+            let args = {};
+            url = url.split("?")[1]
+            
+            if (url === undefined)
+                return args
+            
+            for (let p of url.split("&")) {
+                
+                if (p === "" || !p.includes("="))
+                    continue;
+                
+                p = p.split("=");
+                let name = p[0];
+                let value = parseHexString(p[1]);
+
+                args[name] = value;
+            }
+
+            return args;
+        }
+
+        function getVideoID(url) {
+            /*
+                Gets the video ID from a Youtube URL.
+                If the URL is not a youtube link. It'll return the URL.
+            */
+            if (url.toLowerCase().includes("youtube.com/watch"))
+                return parseURL(url)["v"];
+            else
+                return url;
+        }
+
+        function createVideos() {
+            let args = parseURL(document.location.search);
+
+            if (args.urls === undefined || args.columns === undefined || args.rows === undefined) {
+                // Args is empty. Exit out of the function.
+                return null;
+            }
+            
+            // Grabbing urls
+            let urls = [];
+            for (let u of args.urls.split(",")) {
+                urls.push(`https://www.youtube.com/embed/${u}?autoplay=1&mute=1`);
+            }
+
+            // Creating the html
+            let html = '<div class="col flex">';
+            let i = 0 // index of urls
+
+            for (let r = 0; r < args.rows; r++) {
+                html += '<div class="row flex">';
+            
+                for (let c = 0; c < args.columns; c++) {
+                    html += `<iframe src="${urls[i]}" frameborder="0" allow="autoplay;" allowfullscreen></iframe>`;
+
+                    i++;
+                    if (i >= urls.length)
+                        i = 0;
+                }
+            
+                html += '</div>';
+            }
+            html += '</div>';
+
+            // Changing the body.
+            let body = document.getElementsByTagName("body")[0]
+            body.innerHTML = html;
+            body.style.backgroundColor = "#000000"
+        }
+
+        document.getElementById("bestForm").addEventListener("submit", (event) => {
+            let urls = document.getElementById("urls");
+            let array = [];
+
+            for (let url of urls.value.split("\n")) {
+                array.push(getVideoID(url));
+            }
+
+            urls.value = array.join(",");
+        });
+
+        createVideos();
+    </script>
+</body>
