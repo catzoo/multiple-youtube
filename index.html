@@ -145,7 +145,10 @@
             let array = [];
 
             for (let url of urls.value.split("\n")) {
-                array.push(getVideoID(url));
+                let i = getVideoID(url);
+
+                if (i !== "")
+                    array.push(i);
             }
 
             urls.value = array.join(",");
